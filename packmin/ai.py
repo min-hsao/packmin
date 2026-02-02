@@ -1,4 +1,4 @@
-"""AI provider implementations for OpenAI and DeepSeek."""
+"""AI provider implementations for OpenAI, DeepSeek, GLM, Gemini, and Anthropic."""
 
 import json
 import re
@@ -86,12 +86,116 @@ class DeepSeekProvider(AIProvider):
             raise RuntimeError(f"DeepSeek API request failed: {e}")
 
 
+class GLMProvider(AIProvider):
+    """ZhipuAI GLM API provider (OpenAI-compatible API)."""
+    
+    API_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+    
+    def generate(self, prompt: str) -> str:
+        """Generate response using GLM API."""
+        headers = {
+            "Authorization": f"Bearer {self.config.glm_api_key}",
+            "Content-Type": "application/json",
+        }
+        
+        data = {
+            "model": self.config.glm_model,
+            "messages": [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": 0.7,
+            "max_tokens": 4000,
+        }
+        
+        try:
+            response = requests.post(self.API_URL, headers=headers, json=data, timeout=120)
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get("choices"):
+                    return result["choices"][0].get("message", {}).get("content", "")
+            
+            raise RuntimeError(f"GLM API error: {response.status_code} - {response.text}")
+            
+        except requests.RequestException as e:
+            raise RuntimeError(f"GLM API request failed: {e}")
+
+
+class GeminiProvider(AIProvider):
+    """Google Gemini API provider."""
+    
+    def generate(self, prompt: str) -> str:
+        """Generate response using Google Gemini API."""
+        try:
+            import google.generativeai as genai
+            
+            genai.configure(api_key=self.config.gemini_api_key)
+            model = genai.GenerativeModel(self.config.gemini_model)
+            
+            # Combine system prompt with user prompt since Gemini handles it differently
+            full_prompt = f"{SYSTEM_PROMPT}\n\n{prompt}"
+            
+            response = model.generate_content(
+                full_prompt,
+                generation_config=genai.types.GenerationConfig(
+                    max_output_tokens=4096,
+                    temperature=0.7,
+                ),
+            )
+            
+            if response.text:
+                return response.text
+            return ""
+            
+        except Exception as e:
+            raise RuntimeError(f"Gemini API error: {e}")
+
+
+class AnthropicProvider(AIProvider):
+    """Anthropic Claude API provider."""
+    
+    def generate(self, prompt: str) -> str:
+        """Generate response using Anthropic Claude API."""
+        try:
+            import anthropic
+            
+            client = anthropic.Anthropic(api_key=self.config.anthropic_api_key)
+            
+            response = client.messages.create(
+                model=self.config.anthropic_model,
+                max_tokens=4096,
+                system=SYSTEM_PROMPT,
+                messages=[
+                    {"role": "user", "content": prompt},
+                ],
+            )
+            
+            if response.content and len(response.content) > 0:
+                return response.content[0].text
+            return ""
+            
+        except Exception as e:
+            raise RuntimeError(f"Anthropic API error: {e}")
+
+
 def get_provider(config: Optional[Config] = None) -> AIProvider:
     """Get the appropriate AI provider based on config."""
     config = config or get_config()
     
-    if config.ai_provider == "openai":
-        return OpenAIProvider(config)
+    providers = {
+        "openai": OpenAIProvider,
+        "deepseek": DeepSeekProvider,
+        "glm": GLMProvider,
+        "gemini": GeminiProvider,
+        "anthropic": AnthropicProvider,
+    }
+    
+    provider_class = providers.get(config.ai_provider)
+    if provider_class:
+        return provider_class(config)
+    
+    # Default to DeepSeek
     return DeepSeekProvider(config)
 
 

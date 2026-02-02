@@ -12,11 +12,27 @@ class Config:
     """Application configuration loaded from environment."""
     
     # AI Provider settings
-    ai_provider: Literal["openai", "deepseek"] = "deepseek"
+    ai_provider: Literal["openai", "deepseek", "glm", "gemini", "anthropic"] = "deepseek"
+    
+    # OpenAI
     openai_api_key: Optional[str] = None
     openai_model: str = "gpt-4-turbo-preview"
+    
+    # DeepSeek
     deepseek_api_key: Optional[str] = None
     deepseek_model: str = "deepseek-chat"
+    
+    # GLM (ZhipuAI)
+    glm_api_key: Optional[str] = None
+    glm_model: str = "glm-4"
+    
+    # Google Gemini
+    gemini_api_key: Optional[str] = None
+    gemini_model: str = "gemini-pro"
+    
+    # Anthropic Claude
+    anthropic_api_key: Optional[str] = None
+    anthropic_model: str = "claude-3-sonnet-20240229"
     
     # Weather API
     openweather_api_key: Optional[str] = None
@@ -40,16 +56,29 @@ class Config:
         
         # Get AI provider (default to deepseek)
         ai_provider = os.getenv("AI_PROVIDER", "deepseek").lower()
-        if ai_provider not in ("openai", "deepseek"):
+        if ai_provider not in ("openai", "deepseek", "glm", "gemini", "anthropic"):
             ai_provider = "deepseek"
         
         return cls(
             ai_provider=ai_provider,
+            # OpenAI
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             openai_model=os.getenv("OPENAI_MODEL", "gpt-4-turbo-preview"),
+            # DeepSeek
             deepseek_api_key=os.getenv("DEEPSEEK_API_KEY"),
             deepseek_model=os.getenv("DEEPSEEK_MODEL", "deepseek-chat"),
+            # GLM
+            glm_api_key=os.getenv("GLM_API_KEY"),
+            glm_model=os.getenv("GLM_MODEL", "glm-4"),
+            # Gemini
+            gemini_api_key=os.getenv("GEMINI_API_KEY"),
+            gemini_model=os.getenv("GEMINI_MODEL", "gemini-pro"),
+            # Anthropic
+            anthropic_api_key=os.getenv("ANTHROPIC_API_KEY"),
+            anthropic_model=os.getenv("ANTHROPIC_MODEL", "claude-3-sonnet-20240229"),
+            # Weather
             openweather_api_key=os.getenv("OPENWEATHER_API_KEY"),
+            # Defaults
             default_luggage_volume=float(os.getenv("DEFAULT_LUGGAGE_VOLUME", "39")),
             packing_cube_volume=float(os.getenv("PACKING_CUBE_VOLUME", "9")),
         )
@@ -67,19 +96,38 @@ class Config:
         if self.ai_provider == "deepseek" and not self.deepseek_api_key:
             errors.append("DEEPSEEK_API_KEY is required when using DeepSeek provider")
         
+        if self.ai_provider == "glm" and not self.glm_api_key:
+            errors.append("GLM_API_KEY is required when using GLM provider")
+        
+        if self.ai_provider == "gemini" and not self.gemini_api_key:
+            errors.append("GEMINI_API_KEY is required when using Gemini provider")
+        
+        if self.ai_provider == "anthropic" and not self.anthropic_api_key:
+            errors.append("ANTHROPIC_API_KEY is required when using Anthropic provider")
+        
         return errors
     
     def get_active_api_key(self) -> str:
         """Get the API key for the active provider."""
-        if self.ai_provider == "openai":
-            return self.openai_api_key or ""
-        return self.deepseek_api_key or ""
+        keys = {
+            "openai": self.openai_api_key,
+            "deepseek": self.deepseek_api_key,
+            "glm": self.glm_api_key,
+            "gemini": self.gemini_api_key,
+            "anthropic": self.anthropic_api_key,
+        }
+        return keys.get(self.ai_provider, "") or ""
     
     def get_active_model(self) -> str:
         """Get the model name for the active provider."""
-        if self.ai_provider == "openai":
-            return self.openai_model
-        return self.deepseek_model
+        models = {
+            "openai": self.openai_model,
+            "deepseek": self.deepseek_model,
+            "glm": self.glm_model,
+            "gemini": self.gemini_model,
+            "anthropic": self.anthropic_model,
+        }
+        return models.get(self.ai_provider, self.deepseek_model)
 
 
 # Global config instance (lazy-loaded)

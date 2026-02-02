@@ -2,7 +2,7 @@
 
 AI-powered minimalist packing list generator using capsule wardrobe principles.
 
-PackMin uses AI (OpenAI or DeepSeek) combined with weather data to generate smart, efficient packing lists that maximize versatility while minimizing what you carry.
+PackMin uses AI (OpenAI, DeepSeek, GLM, Gemini, or Anthropic Claude) combined with weather data to generate smart, efficient packing lists that maximize versatility while minimizing what you carry.
 
 ## Features
 
@@ -12,6 +12,7 @@ PackMin uses AI (OpenAI or DeepSeek) combined with weather data to generate smar
 - 🧺 **Laundry-aware** - Adjusts quantities based on laundry access
 - 📦 **Volume tracking** - Estimates packing cube needs and luggage fit
 - 💾 **Multiple export formats** - TXT, Markdown, CSV (for todo apps)
+- 🤖 **Multiple AI providers** - Choose from OpenAI, DeepSeek, GLM, Gemini, or Anthropic
 
 ## Installation
 
@@ -40,23 +41,50 @@ PackMin uses environment variables for API keys. Create a `.env` file in your wo
 # Weather API (required)
 OPENWEATHER_API_KEY=your_openweather_api_key
 
-# AI Provider - choose one
-AI_PROVIDER=deepseek  # or "openai"
+# AI Provider - choose one: openai, deepseek, glm, gemini, anthropic
+AI_PROVIDER=deepseek
+```
 
-# DeepSeek API (if using DeepSeek)
+### AI Provider Configuration
+
+#### DeepSeek (default)
+```bash
+AI_PROVIDER=deepseek
 DEEPSEEK_API_KEY=your_deepseek_api_key
+DEEPSEEK_MODEL=deepseek-chat  # optional, this is the default
+```
 
-# OpenAI API (if using OpenAI)
+#### OpenAI
+```bash
+AI_PROVIDER=openai
 OPENAI_API_KEY=your_openai_api_key
+OPENAI_MODEL=gpt-4-turbo-preview  # optional, this is the default
+```
+
+#### GLM (ZhipuAI)
+```bash
+AI_PROVIDER=glm
+GLM_API_KEY=your_glm_api_key
+GLM_MODEL=glm-4  # optional, this is the default
+```
+
+#### Google Gemini
+```bash
+AI_PROVIDER=gemini
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-pro  # optional, this is the default
+```
+
+#### Anthropic Claude
+```bash
+AI_PROVIDER=anthropic
+ANTHROPIC_API_KEY=your_anthropic_api_key
+ANTHROPIC_MODEL=claude-3-sonnet-20240229  # optional, this is the default
 ```
 
 ### Optional Settings
 
 ```bash
-# Models (defaults shown)
-OPENAI_MODEL=gpt-4-turbo-preview
-DEEPSEEK_MODEL=deepseek-chat
-
 # Defaults
 DEFAULT_LUGGAGE_VOLUME=39  # liters
 PACKING_CUBE_VOLUME=9      # liters
@@ -67,6 +95,9 @@ PACKING_CUBE_VOLUME=9      # liters
 1. **OpenWeather**: Sign up at [openweathermap.org](https://openweathermap.org/api) (free tier available)
 2. **DeepSeek**: Get key from [platform.deepseek.com](https://platform.deepseek.com)
 3. **OpenAI**: Get key from [platform.openai.com](https://platform.openai.com)
+4. **GLM (ZhipuAI)**: Get key from [open.bigmodel.cn](https://open.bigmodel.cn)
+5. **Google Gemini**: Get key from [makersuite.google.com](https://makersuite.google.com/app/apikey)
+6. **Anthropic**: Get key from [console.anthropic.com](https://console.anthropic.com)
 
 ## Usage
 
@@ -176,7 +207,7 @@ packmin/
 │   ├── cli.py          # Click-based CLI
 │   ├── config.py       # Environment config
 │   ├── weather.py      # OpenWeather integration
-│   ├── ai.py           # AI providers (OpenAI/DeepSeek)
+│   ├── ai.py           # AI providers (OpenAI/DeepSeek/GLM/Gemini/Anthropic)
 │   ├── prompts.py      # AI prompt templates
 │   └── models.py       # Pydantic data models
 ├── tests/
