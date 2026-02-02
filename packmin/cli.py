@@ -8,7 +8,7 @@ from typing import Optional
 
 import click
 
-from .ai import generate_packing_list
+from .ai import generate_packing_list, estimate_luggage_volume
 from .config import get_config, Config
 from .models import (
     LaundryInfo,
@@ -84,6 +84,7 @@ def interactive_traveler() -> TravelerInfo:
         age=int(prompt_with_default("  Age", "30") or "30"),
         clothing_size=prompt_with_default("  Clothing size (e.g., Men's M)"),
         shoe_size=prompt_with_default("  Shoe size (e.g., US 10)"),
+        sleepwear=click.prompt("  Sleepwear preference", type=click.Choice(["dedicated", "minimal", "none"]), default="minimal"),
     )
 
 
@@ -98,9 +99,19 @@ def interactive_trip_details(destinations: list[TripDestination], traveler: Trav
     click.echo("\n📦 Luggage:")
     click.echo("  1. Enter volume in liters")
     click.echo("  2. Enter dimensions (L x W x H cm)")
+    click.echo("  3. Enter luggage name/model (AI lookup)")
     choice = click.prompt("  Choose option", type=int, default=1)
     
-    if choice == 2:
+    volume = 39.0
+    luggage_name = ""
+    
+    if choice == 3:
+        luggage_name = click.prompt("  Luggage name (e.g. 'Away Carry-On')")
+        click.echo("  🔍 Looking up volume...")
+        volume = estimate_luggage_volume(luggage_name)
+        click.echo(f"  Found/Estimated: {volume}L")
+        
+    elif choice == 2:
         dims = click.prompt("  Dimensions (e.g., 55 x 35 x 20)")
         try:
             parts = [float(d.strip()) for d in dims.split("x")]
@@ -121,6 +132,7 @@ def interactive_trip_details(destinations: list[TripDestination], traveler: Trav
         additional_notes=additional,
         laundry=LaundryInfo(available=laundry_available),
         luggage_volume_liters=volume,
+        luggage_name=luggage_name,
     )
 
 
@@ -219,9 +231,11 @@ def save_packing_list(
 @click.option("--age", "-a", type=int, help="Traveler age")
 @click.option("--size", help="Clothing size")
 @click.option("--shoe-size", help="Shoe size")
+@click.option("--sleepwear", type=click.Choice(["dedicated", "minimal", "none"]), default="minimal", help="Sleepwear preference")
 @click.option("--activities", help="Activities (comma-separated)")
 @click.option("--laundry/--no-laundry", default=False, help="Laundry available")
-@click.option("--volume", "-v", type=float, default=39.0, help="Luggage volume in liters")
+@click.option("--volume", "-v", type=float, help="Luggage volume in liters")
+@click.option("--luggage-name", help="Luggage brand/model name (overrides volume if found)")
 @click.option("--notes", "-n", help="Additional notes for AI")
 @click.option("--output", "-o", type=click.Path(), help="Output file path")
 @click.option("--format", "output_format", type=click.Choice(["txt", "md", "csv"]), help="Output format")
@@ -235,9 +249,11 @@ def main(
     age: Optional[int],
     size: Optional[str],
     shoe_size: Optional[str],
+    sleepwear: str,
     activities: Optional[str],
     laundry: bool,
-    volume: float,
+    volume: Optional[float],
+    luggage_name: Optional[str],
     notes: Optional[str],
     output: Optional[str],
     output_format: Optional[str],
@@ -300,7 +316,17 @@ def main(
             age=age,
             clothing_size=size or "",
             shoe_size=shoe_size or "",
+            sleepwear=sleepwear,
         )
+        
+        # Resolve luggage volume
+        final_volume = 39.0
+        if volume:
+            final_volume = volume
+        elif luggage_name:
+            click.echo(f"🔍 Looking up volume for '{luggage_name}'...")
+            final_volume = estimate_luggage_volume(luggage_name)
+            click.echo(f"   Found/Estimated: {final_volume}L")
         
         trip_info = TripInfo(
             destinations=destinations,
@@ -308,7 +334,8 @@ def main(
             activities=activities or "",
             additional_notes=notes or "",
             laundry=LaundryInfo(available=laundry),
-            luggage_volume_liters=volume,
+            luggage_volume_liters=final_volume,
+            luggage_name=luggage_name or "",
         )
     
     # Fetch weather data

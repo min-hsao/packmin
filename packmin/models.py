@@ -11,6 +11,7 @@ class TravelerInfo(BaseModel):
     age: Optional[int] = None
     clothing_size: str = ""
     shoe_size: str = ""
+    sleepwear: str = "minimal"  # "dedicated" (pack pajamas), "minimal" (underwear+undershirt), "none"
     
     
 class TripDestination(BaseModel):
@@ -38,6 +39,7 @@ class TripInfo(BaseModel):
     additional_notes: str = ""
     laundry: LaundryInfo = Field(default_factory=LaundryInfo)
     luggage_volume_liters: float = 39.0
+    luggage_name: str = ""  # Optional luggage brand/model for reference
     
     @property
     def total_duration_days(self) -> int:

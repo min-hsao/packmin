@@ -277,3 +277,50 @@ def generate_packing_list(prompt: str, config: Optional[Config] = None) -> Packi
     provider = get_provider(config)
     raw_response = provider.generate(prompt)
     return parse_packing_list(raw_response)
+
+
+def estimate_luggage_volume(luggage_name: str, config: Optional[Config] = None) -> float:
+    """Estimate volume in liters for a given luggage name using AI."""
+    # Common luggage cache to avoid API calls
+    COMMON_LUGGAGE = {
+        "away carry-on": 39.8,
+        "away bigger carry-on": 47.9,
+        "away large": 99.2,
+        "away medium": 68.8,
+        "rimowa cabin": 35.0,
+        "rimowa cabin plus": 49.0,
+        "rimowa check-in l": 86.0,
+        "rimowa check-in m": 60.0,
+        "samsonite freeform 21": 39.0,  # approximate
+        "travelpro platinum elite 21": 46.0,
+        "cotopaxi allpa 35l": 35.0,
+        "cotopaxi allpa 42l": 42.0,
+        "osprey farpoint 40": 40.0,
+        "patagonia black hole 55": 55.0,
+        "monos carry-on": 39.9,
+        "monos carry-on plus": 48.0,
+    }
+    
+    normalized_name = luggage_name.lower().strip()
+    
+    # Check cache first
+    for key, volume in COMMON_LUGGAGE.items():
+        if key in normalized_name:
+            return volume
+            
+    # If not found, ask AI
+    provider = get_provider(config)
+    prompt = f"""Estimate the internal volume in liters for this luggage: "{luggage_name}".
+    Return ONLY a single number (float). If unknown, estimate based on typical size for this type of bag (e.g. carry-on ~40L, check-in ~80L).
+    Do not add text, just the number."""
+    
+    try:
+        response = provider.generate(prompt).strip()
+        # Extract first number found
+        match = re.search(r"(\d+(\.\d+)?)", response)
+        if match:
+            return float(match.group(1))
+    except Exception:
+        pass
+        
+    return 39.0  # Default fallback

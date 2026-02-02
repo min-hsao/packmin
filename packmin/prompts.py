@@ -77,6 +77,8 @@ def format_trip_details(trip_info: TripInfo) -> str:
         lines.append(f"**Clothing Size:** {traveler.clothing_size}")
     if traveler.shoe_size:
         lines.append(f"**Shoe Size:** {traveler.shoe_size}")
+    if traveler.sleepwear:
+        lines.append(f"**Sleepwear Preference:** {traveler.sleepwear} (dedicated=pack pajamas, minimal=use underwear/undershirt, none=sleep naked)")
     
     # Activities and luggage
     if trip_info.activities:
@@ -84,7 +86,7 @@ def format_trip_details(trip_info: TripInfo) -> str:
     
     laundry_status = "Yes" if trip_info.laundry.available else "No"
     lines.append(f"**Laundry Available:** {laundry_status}")
-    lines.append(f"**Luggage Volume:** {trip_info.luggage_volume_liters}L")
+    lines.append(f"**Luggage:** {trip_info.luggage_volume_liters}L" + (f" ({trip_info.luggage_name})" if trip_info.luggage_name else ""))
     
     return "\n".join(lines)
 
